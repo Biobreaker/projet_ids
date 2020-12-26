@@ -76,6 +76,7 @@ void my_packet_handler(u_char* args, const struct pcap_pkthdr* header, const u_c
 
 	populate_packet_ds(header, packet, frame);
 
+
 	printf(	"-----------\nMAC Source: %s\nMAC Destination: %s\nEthernet Type: %d\nFrame Size: %d\n----\n"
 			"IP Source: %s\nIP Destination: %s\n----\n"
 			"Port Source: %d\nPort Destination: %d\nData: %s\nData Length: %d\n"

@@ -59,23 +59,18 @@ void rule_matcher(Rule* rules_ds, ETHER_Frame* frame){
 //count == nbr of line in file
 void read_rules(FILE* file, Rule* rules_ds, int count){
 	
-	char* str_line = (char*)calloc(MAX_LINE,sizeof(char));
 
-	char str_line[MAX_LINE];
-	//char word[MAX_WORD_LEN];
-	while(fgets(str_line,MAX_LINE,file)!=NULL){
-		char tmp_line[strlen(str_line)+1];
-	}
 }
 
 void my_packet_handler(u_char* args, const struct pcap_pkthdr* header, const u_char* packet){
 
-	ETHER_Frame* frame = (ETHER_Frame*)calloc(1,sizeof(ETHER_Frame));		
 	
+
+	ETHER_Frame* frame = (ETHER_Frame*)calloc(1,sizeof(ETHER_Frame));
+
 	puts("\nSTART OF PACKET");	
 
 	populate_packet_ds(header, packet, frame);
-
 
 	printf(	"-----------\nMAC Source: %s\nMAC Destination: %s\nEthernet Type: %d\nFrame Size: %d\n----\n"
 			"IP Source: %s\nIP Destination: %s\n----\n"
@@ -85,11 +80,27 @@ void my_packet_handler(u_char* args, const struct pcap_pkthdr* header, const u_c
 			frame->data.source_ip,frame->data.destination_ip,
 			frame->data.data.source_port,frame->data.data.destination_port,frame->data.data.data,frame->data.data.data_length
 			);
-
+	
 	free(frame);
 }
 
 int main(int argc, char** argv){
+
+		FILE* f_rules = fopen(argv[1],"r");
+
+		char str_line[MAX_LINE];
+		int nbr_line = 0;
+		while(fgets(str_line,MAX_LINE,f_rules)!=NULL){
+			//printf("str_line: %s\n",str_line);
+			nbr_line++;
+		}
+		//printf("Nb of line: %d",nbr_line);
+
+		//reset cursor in file   
+		rewind(f_rules);
+		Rule tab_rules[nbr_line];
+		
+		read_rules(f_rules,tab_rules,nbr_line);
 
         char* device = "eth1";
         char error_buffer[PCAP_ERRBUF_SIZE];
@@ -98,10 +109,12 @@ int main(int argc, char** argv){
         handle = pcap_create(device,error_buffer);
         pcap_set_timeout(handle,10);
         pcap_activate(handle);
-        int total_packet_count = 80;
+		//if total_packet_count == 0 -> endless loop
+        int total_packet_count = 0;
 
 		puts("\n-------Starting-------\n");
         pcap_loop(handle, total_packet_count, my_packet_handler, NULL);
-
-        return 0;
+		//fclose(rule);
+        
+		return 0;
 }

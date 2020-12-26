@@ -3,6 +3,7 @@
 #include <netinet/if_ether.h>
 #include <string.h>
 
+
 /* Ethernet addresses are 6 bytes */
 #define SIZE_ETHERNET 14
 #define ETHER_ADDR_LEN_STR 18

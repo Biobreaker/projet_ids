@@ -65,7 +65,6 @@ void read_rules(FILE* file, Rule* rules_ds, int count){
 	//char word[MAX_WORD_LEN];
 	while(fgets(str_line,MAX_LINE,file)!=NULL){
 		char tmp_line[strlen(str_line)+1];
-		
 	}
 }
 

@@ -59,7 +59,7 @@ void rule_matcher(Rule* rules_ds, ETHER_Frame* frame){
 //count == nbr of line in file
 void read_rules(FILE* file, Rule* rules_ds, int count){
 	
-	//char* str_line = (char*)calloc(MAX_LINE)
+	char* str_line = (char*)calloc(MAX_LINE,sizeof(char));
 
 	char str_line[MAX_LINE];
 	//char word[MAX_WORD_LEN];

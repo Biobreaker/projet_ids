@@ -91,9 +91,9 @@ int populate_packet_ds(const struct pcap_pkthdr* header, const u_char* packet, E
                 {
                         printf("\nUDP Handling\n");
                 }
-				if((int)ip->ip_p==ICMP_PROTOCOL)
+				if((int)ip->ip_p==ICMPV4_PROTOCOL)
 				{
-						printf("\nICMP\n");
+						printf("\nICMP Protocol\n");
 				}
                 if((int)ip->ip_p==TCP_PROTOCOL)
                 {

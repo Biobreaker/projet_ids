@@ -1,11 +1,12 @@
 #include "populate.h"
 #include <stdlib.h>
-//value for rule files
+#include <syslog.h>
+#include <stdbool.h>
+//define for rule files
 #define MAX_OPTION 5
 #define MAX_VALUE_LEN 25
-#define MAX_RULE_PARAM 8
-#define MAX_WORD_LEN 16
-#define MAX_LINE MAX_WORD_LEN * MAX_RULE_PARAM + MAX_OPTION * MAX_VALUE_LEN
+#define MAX_WORD_LEN 15
+#define MAX_LINE 2*MAX_WORD_LEN + 4*IP_ADDR_LEN_STR  + MAX_OPTION*MAX_VALUE_LEN
 
 struct rule_option{
 
@@ -14,27 +15,79 @@ struct rule_option{
 
 	int key;
 	char value[MAX_VALUE_LEN];
+
 } typedef Option;
 
 struct ids_rule{
-	//
+
 	#define ACTION_ALERT 1
 	#define ANY 0
 	#define DIRECTION_LEN 3
 
 	int action;
-	int protocol;
+	char protocol[MAX_WORD_LEN];
 	char source_ip[IP_ADDR_LEN_STR];
 	int source_port;
 	char direction[DIRECTION_LEN];
 	char destination_ip[IP_ADDR_LEN_STR];
 	int destination_port;
-	//maybe an array of struct rule_option ??
 	Option option_array[MAX_OPTION];
 	int option_size;
 
-	
 } typedef Rule;
+
+/* 
+ICMPV4_PROTOCOL 1
+TCP_PROTOCOL 6
+UDP_PROTOCOL 17
+FTP_DATA_PROTOCOL 20
+FTP_CONTROL_PROTOCOL 21
+SFTP_PROTOCOL 22
+TELNET_PROTOCOL 23
+SMTP_PROTOCOL 25
+RSVP_PROTOCOL 46
+GRE_PROTOCOL 47
+ESP_PROTOCOL 50
+DNS_PROTOCOL 53
+ICMPV6_PROTOCOL 58
+DHCP_PROTOCOL 67
+TFTP_PROTOCOL 69
+HTTP_PROTOCOL 80
+POP3_PROTOCOL 110
+NTP_PROTOCOL 123
+IMAP4_PROTOCOL 143
+HTTPS_PROTOCOL 443
+SNMP_PROTOCOL 161
+*/
+
+bool protocolCheck(Rule* rules_ds, ETHER_Frame* frame){
+	bool r_value = false;
+	if(strcmp(rules_ds->protocol,"any")==0){
+		//check with frame protocol
+			r_value = true;
+	}
+	if(strcmp(rules_ds->protocol,"http")==0){
+		//check with frame protocol
+		r_value = true;
+	}
+	if(strcmp(rules_ds->protocol,"tcp")==0){
+		//check with frame protocol
+		r_value = true;
+	}
+	if(strcmp(rules_ds->protocol,"udp")==0){
+		//check with frame protocol
+		r_value = true;
+	}
+	if(strcmp(rules_ds->protocol,"ftp")==0){
+		//check with frame protocol
+		r_value = true;
+	}
+	if(strcmp(rules_ds->protocol,"icmp")==0){
+		//check with frame protocol
+		r_value = true;
+	}
+	return r_value;
+}
 
 void rule_matcher(Rule* rules_ds, ETHER_Frame* frame){
 	//Source IP check
@@ -48,9 +101,13 @@ void rule_matcher(Rule* rules_ds, ETHER_Frame* frame){
 					//Destination Port check
 					if(rules_ds->destination_port == ANY||rules_ds->destination_port == frame->data.data.destination_port){
 						//Protocol check
+						//Make a fct for protocol check
 						if(rules_ds->protocol==ANY){
 							printf("Rule matched\n");
-							//if(rules_ds->action == ACTION_ALERT){
+							//Option check
+							//also make fct
+								//react according to action and option
+								//if(rules_ds->action == ACTION_ALERT){
 						}
 					}
 				}
@@ -71,23 +128,7 @@ void read_rules(FILE* file, Rule* rules_ds, int count){
 			rules_ds[i].action = ACTION_ALERT;
 		}
 		//copy second param (Protocol)
-		strcpy(checkWord,(strtok(NULL," ")));
-		//checking PROTOCOL (maybe paste and do it in rule_matcher)
-		if(strcmp(checkWord,"any")==0){
-			rules_ds[i].protocol = ANY;
-		}
-		if(strcmp(checkWord,"http")==0){
-			rules_ds[i].protocol = HTTP_PROTOCOL;
-		}
-		if(strcmp(checkWord,"tcp")==0){
-			rules_ds[i].protocol = TCP_PROTOCOL;
-		}
-		if(strcmp(checkWord,"udp")==0){
-			rules_ds[i].protocol = UDP_PROTOCOL;
-		}
-		if(strcmp(checkWord,"ftp")==0){
-			rules_ds[i].protocol = FTP_PROTOCOL;
-		}
+		strcpy(rules_ds[i].protocol,(strtok(NULL," ")));
 		//copy third param (IP source)
 		strcpy(rules_ds[i].source_ip,strtok(NULL," "));
 		//copy fourth (Port source)
@@ -99,7 +140,7 @@ void read_rules(FILE* file, Rule* rules_ds, int count){
 		//copy seventh param (Port Destination)
 		strcpy(checkWord,(strtok(NULL," ")));
 		rules_ds[i].destination_port = atoi(checkWord);
-		//copy option
+		//copy options
 		char option[MAX_VALUE_LEN];
 		//copy key into option
 		strcpy(option,strtok(NULL,"(:"));
@@ -127,7 +168,7 @@ void my_packet_handler(u_char* args, const struct pcap_pkthdr* header, const u_c
 
 	//create Struct Frame
 	ETHER_Frame* frame = (ETHER_Frame*)calloc(1,sizeof(ETHER_Frame));
-	
+
 		//puts("\nSTART OF PACKET");	
 	//Filling frame with data
 	populate_packet_ds(header, packet, frame);
@@ -147,44 +188,43 @@ void my_packet_handler(u_char* args, const struct pcap_pkthdr* header, const u_c
 
 int main(int argc, char** argv){
 
-		FILE* f_rules = fopen(argv[1],"r");
+	FILE* f_rules = fopen(argv[1],"r");
+	char str_line[MAX_LINE];
+	//Checking nbr of line in file
+	int nbr_line = 0;
+	while(fgets(str_line,MAX_LINE,f_rules)!=NULL){
+		nbr_line++;
+	}
+	//reset cursor in file   
+	rewind(f_rules);
 
-		char str_line[MAX_LINE];
-		//Checking nbr of line in file
-		int nbr_line = 0;
-		while(fgets(str_line,MAX_LINE,f_rules)!=NULL){
-			nbr_line++;
+	Rule tab_rules[nbr_line];
+	//Rule* tab_rules = (Rule*)calloc(nbr_line,sizeof(Rule));
+	read_rules(f_rules,tab_rules,nbr_line);
+	/* //Print tab_rule content
+	for(int i = 0;i<nbr_line;i++){
+		printf("Regle n°%d\n-----\nAction: %d, Protocol: %d, From: %s:%d Direction:[%s], To: %s:%d\n",i+1,tab_rules[i].action,tab_rules[i].protocol,
+			tab_rules[i].source_ip,tab_rules[i].source_port,tab_rules[i].direction,tab_rules[i].destination_ip,tab_rules[i].destination_port);
+		for(int j = 0;j<tab_rules[i].option_size;j++){
+			printf("Option %d: [%d:%s]",j+1,tab_rules[i].option_array[j].key,tab_rules[i].option_array[j].value);
+			printf("//");
 		}
-		//reset cursor in file   
-		rewind(f_rules);
+		puts("\n");
+	}
+	*/
+	char* device = "eth1";
+	char error_buffer[PCAP_ERRBUF_SIZE];
+	pcap_t* handle;
 
-		Rule tab_rules[nbr_line];
-		//Rule* tab_rules = (Rule*)calloc(nbr_line,sizeof(Rule));
-		read_rules(f_rules,tab_rules,nbr_line);
-		/* //Print tab_rule content
-		for(int i = 0;i<nbr_line;i++){
-			printf("Regle n°%d\n-----\nAction: %d, Protocol: %d, From: %s:%d Direction:[%s], To: %s:%d\n",i+1,tab_rules[i].action,tab_rules[i].protocol,
-				tab_rules[i].source_ip,tab_rules[i].source_port,tab_rules[i].direction,tab_rules[i].destination_ip,tab_rules[i].destination_port);
-			for(int j = 0;j<tab_rules[i].option_size;j++){
-				printf("Option %d: [%d:%s]",j+1,tab_rules[i].option_array[j].key,tab_rules[i].option_array[j].value);
-				printf("//");
-			}
-			puts("\n");
-		}
-		*/
-        char* device = "eth1";
-        char error_buffer[PCAP_ERRBUF_SIZE];
-        pcap_t* handle;
+	handle = pcap_create(device,error_buffer);
+	pcap_set_timeout(handle,10);
+	pcap_activate(handle);
+	//if total_packet_count == 0 -> endless loop
+	int total_packet_count = 5;
 
-        handle = pcap_create(device,error_buffer);
-        pcap_set_timeout(handle,10);
-        pcap_activate(handle);
-		//if total_packet_count == 0 -> endless loop
-        int total_packet_count = 0;
+	puts("\n-------Starting-------\n");
+	pcap_loop(handle, total_packet_count, my_packet_handler, NULL);
 
-		puts("\n-------Starting-------\n");
-        pcap_loop(handle, total_packet_count, my_packet_handler, NULL);
-
-		fclose(f_rules);
-		return 0;
+	fclose(f_rules);
+	return 0;
 }

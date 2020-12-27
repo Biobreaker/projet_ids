@@ -14,6 +14,11 @@
 #define IPV6 34525
 #define UDP_PROTOCOL 17
 #define TCP_PROTOCOL 6
+#define ICMP_PROTOCOL 1
+#define FTP_PROTOCOL 21
+#define SFTP_PROTOCOL 22
+#define TELNET_PROTOCOL 23
+#define HTTP_PROTOCOL 80
 
 #define ERROR -1
 

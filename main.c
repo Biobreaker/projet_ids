@@ -203,7 +203,7 @@ int main(int argc, char** argv){
 	read_rules(f_rules,tab_rules,nbr_line);
 	/* //Print tab_rule content
 	for(int i = 0;i<nbr_line;i++){
-		printf("Regle n°%d\n-----\nAction: %d, Protocol: %d, From: %s:%d Direction:[%s], To: %s:%d\n",i+1,tab_rules[i].action,tab_rules[i].protocol,
+		printf("Regle n°%d\n-----\nAction: %d, Protocol: %s, From: %s:%d Direction:[%s], To: %s:%d\n",i+1,tab_rules[i].action,tab_rules[i].protocol,
 			tab_rules[i].source_ip,tab_rules[i].source_port,tab_rules[i].direction,tab_rules[i].destination_ip,tab_rules[i].destination_port);
 		for(int j = 0;j<tab_rules[i].option_size;j++){
 			printf("Option %d: [%d:%s]",j+1,tab_rules[i].option_array[j].key,tab_rules[i].option_array[j].value);

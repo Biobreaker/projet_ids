@@ -4,7 +4,7 @@
 #include <stdbool.h>
 //define for rule files
 #define MAX_OPTION 5
-#define MAX_VALUE_LEN 25
+#define MAX_VALUE_LEN 50
 #define MAX_WORD_LEN 15
 #define MAX_LINE 2*MAX_WORD_LEN + 4*IP_ADDR_LEN_STR  + MAX_OPTION*MAX_VALUE_LEN
 
@@ -36,20 +36,25 @@ struct ids_rule{
 
 } typedef Rule;
 
-/* 
+/*
+Transport
+
 ICMPV4_PROTOCOL 1
 TCP_PROTOCOL 6
 UDP_PROTOCOL 17
+RSVP_PROTOCOL 46
+GRE_PROTOCOL 47
+ESP_PROTOCOL 50
+ICMPV6_PROTOCOL 58
+
+Application
+
 FTP_DATA_PROTOCOL 20
 FTP_CONTROL_PROTOCOL 21
 SFTP_PROTOCOL 22
 TELNET_PROTOCOL 23
 SMTP_PROTOCOL 25
-RSVP_PROTOCOL 46
-GRE_PROTOCOL 47
-ESP_PROTOCOL 50
 DNS_PROTOCOL 53
-ICMPV6_PROTOCOL 58
 DHCP_PROTOCOL 67
 TFTP_PROTOCOL 69
 HTTP_PROTOCOL 80
@@ -63,28 +68,51 @@ SNMP_PROTOCOL 161
 bool protocolCheck(Rule* rules_ds, ETHER_Frame* frame){
 	bool r_value = false;
 	if(strcmp(rules_ds->protocol,"any")==0){
-		//check with frame protocol
 			r_value = true;
 	}
-	if(strcmp(rules_ds->protocol,"http")==0){
-		//check with frame protocol
-		r_value = true;
+//Check Transport Layer Protocol
+	if(strcmp(rules_ds->protocol,"icmp")==0){
+		if(frame->data.transport_protocol == ICMPV4_PROTOCOL ||frame->data.transport_protocol == ICMPV6_PROTOCOL){
+			r_value = true;
+		}
 	}
 	if(strcmp(rules_ds->protocol,"tcp")==0){
-		//check with frame protocol
-		r_value = true;
+		if(frame->data.transport_protocol == TCP_PROTOCOL){
+			r_value = true;
+		}
+
 	}
 	if(strcmp(rules_ds->protocol,"udp")==0){
-		//check with frame protocol
-		r_value = true;
+		if(frame->data.transport_protocol == UDP_PROTOCOL){
+			r_value = true;
+		}
 	}
-	if(strcmp(rules_ds->protocol,"ftp")==0){
-		//check with frame protocol
-		r_value = true;
+	if(strcmp(rules_ds->protocol,"rsvp")==0){
+		if(frame->data.transport_protocol == RSVP_PROTOCOL){
+			r_value = true;
+		}
 	}
-	if(strcmp(rules_ds->protocol,"icmp")==0){
-		//check with frame protocol
-		r_value = true;
+	if(strcmp(rules_ds->protocol,"gre")==0){
+		if(frame->data.transport_protocol == GRE_PROTOCOL){
+			r_value = true;
+		}
+	}
+	if(strcmp(rules_ds->protocol,"esp")==0){
+		if(frame->data.transport_protocol == ESP_PROTOCOL){
+			r_value = true;
+		}
+	}
+//Check Application Layer Protocol
+	//Check Application Layer via TCP
+	if(frame->data.transport_protocol == TCP_PROTOCOL){
+		if(strcmp(rules_ds->protocol,"ftp")==0){
+			//check port
+				r_value = true;
+		}
+		if(strcmp(rules_ds->protocol,"http")==0){
+			//check port
+			r_value = true;
+		}
 	}
 	return r_value;
 }
@@ -101,13 +129,23 @@ void rule_matcher(Rule* rules_ds, ETHER_Frame* frame){
 					//Destination Port check
 					if(rules_ds->destination_port == ANY||rules_ds->destination_port == frame->data.data.destination_port){
 						//Protocol check
-						//Make a fct for protocol check
-						if(rules_ds->protocol==ANY){
+						if(protocolCheck(rules_ds, frame)){
 							printf("Rule matched\n");
 							//Option check
 							//also make fct
 								//react according to action and option
-								//if(rules_ds->action == ACTION_ALERT){
+								char rule_message[MAX_VALUE_LEN];
+								strcpy(rule_message,"No message provided in .rules file");
+								for(int i = 0 ; i < rules_ds->option_size ; i++){
+									if(rules_ds->option_array[i].key == MSG_OPTION){
+										strcpy(rule_message,rules_ds->option_array[i].value);
+									}
+								}
+								if(rules_ds->action == ACTION_ALERT){
+									openlog("IDS",LOG_PID|LOG_CONS,LOG_USER);
+									syslog(LOG_INFO,rule_message);
+									closelog();
+								}
 						}
 					}
 				}
@@ -199,9 +237,12 @@ int main(int argc, char** argv){
 	rewind(f_rules);
 
 	Rule tab_rules[nbr_line];
+	//OR
 	//Rule* tab_rules = (Rule*)calloc(nbr_line,sizeof(Rule));
+	
 	read_rules(f_rules,tab_rules,nbr_line);
-	/* //Print tab_rule content
+	//Print tab_rule content
+	/*
 	for(int i = 0;i<nbr_line;i++){
 		printf("Regle n°%d\n-----\nAction: %d, Protocol: %s, From: %s:%d Direction:[%s], To: %s:%d\n",i+1,tab_rules[i].action,tab_rules[i].protocol,
 			tab_rules[i].source_ip,tab_rules[i].source_port,tab_rules[i].direction,tab_rules[i].destination_ip,tab_rules[i].destination_port);
@@ -220,7 +261,7 @@ int main(int argc, char** argv){
 	pcap_set_timeout(handle,10);
 	pcap_activate(handle);
 	//if total_packet_count == 0 -> endless loop
-	int total_packet_count = 5;
+	int total_packet_count = 0;
 
 	puts("\n-------Starting-------\n");
 	pcap_loop(handle, total_packet_count, my_packet_handler, NULL);

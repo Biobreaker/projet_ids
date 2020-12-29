@@ -116,6 +116,7 @@ struct custom_ip
 {
         char source_ip[IP_ADDR_LEN_STR];
         char destination_ip[IP_ADDR_LEN_STR];
+        int transport_protocol;
         TCP_Segment data;
 
 } typedef IP_Packet;

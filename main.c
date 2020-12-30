@@ -7,7 +7,7 @@
 #define MAX_VALUE_LEN 50
 #define MAX_WORD_LEN 15
 #define MAX_LINE 2*MAX_WORD_LEN + 4*IP_ADDR_LEN_STR  + MAX_OPTION*MAX_VALUE_LEN
-
+//used to store options in rules
 struct rule_option{
 
 	#define MSG_OPTION 1
@@ -17,7 +17,7 @@ struct rule_option{
 	char value[MAX_VALUE_LEN];
 
 } typedef Option;
-
+//used to store converted ids.rules value
 struct ids_rule{
 
 	#define ACTION_ALERT 1
@@ -35,7 +35,15 @@ struct ids_rule{
 	int option_size;
 
 } typedef Rule;
+//used to transfer int and struct ids_rule to my_packet_handler
+struct argument_passer{
 
+	#define MAX_RULE_LINES 32
+
+	int total_line;
+	Rule rules_array[MAX_RULE_LINES];
+	
+} typedef Arg_passer;
 /*
 Transport
 
@@ -106,18 +114,22 @@ bool protocolCheck(Rule* rules_ds, ETHER_Frame* frame){
 	//Check Application Layer via TCP
 	if(frame->data.transport_protocol == TCP_PROTOCOL){
 		if(strcmp(rules_ds->protocol,"ftp")==0){
-			//check port
+			if(frame->data.data.source_port == FTP_DATA_PROTOCOL || frame->data.data.destination_port == FTP_DATA_PROTOCOL
+			  || frame->data.data.source_port == FTP_CONTROL_PROTOCOL || frame->data.data.destination_port == FTP_DATA_PROTOCOL){
 				r_value = true;
+			}
 		}
 		if(strcmp(rules_ds->protocol,"http")==0){
-			//check port
-			r_value = true;
+			if(frame->data.data.source_port == HTTP_PROTOCOL || frame->data.data.destination_port == HTTP_PROTOCOL){
+				r_value = true;
+			}
 		}
 	}
 	return r_value;
 }
 
 void rule_matcher(Rule* rules_ds, ETHER_Frame* frame){
+
 	//Source IP check
 	if(strcmp(rules_ds->source_ip,"any")==0||strcmp(rules_ds->source_ip,frame->data.source_ip)==0){
 		//Source Port check
@@ -210,7 +222,28 @@ void my_packet_handler(u_char* args, const struct pcap_pkthdr* header, const u_c
 		//puts("\nSTART OF PACKET");	
 	//Filling frame with data
 	populate_packet_ds(header, packet, frame);
-	/* // print Ether_Frame
+	
+	
+	//recasting args into Arg_passes
+	Arg_passer* arg_pass = (Arg_passer*)args;
+	
+	for(int i = 0;i<arg_pass->total_line;i++){
+		rule_matcher(&arg_pass->rules_array[i],frame);
+	}
+	//print rules
+	/*
+	for(int i = 0;i<arg_pass->total_line;i++){
+		printf("Regle n°%d\n-----\nAction: %d, Protocol: %s, From: %s:%d Direction:[%s], To: %s:%d\n",i+1,arg_pass->rules_array[i].action,arg_pass->rules_array[i].protocol,
+			arg_pass->rules_array[i].source_ip,arg_pass->rules_array[i].source_port,arg_pass->rules_array[i].direction,arg_pass->rules_array[i].destination_ip,arg_pass->rules_array[i].destination_port);
+		for(int j = 0;j<arg_pass->rules_array[i].option_size;j++){
+			printf("Option %d: [%d:%s]",j+1,arg_pass->rules_array[i].option_array[j].key,arg_pass->rules_array[i].option_array[j].value);
+			printf("//");
+		}
+		puts("\n");
+	}
+	*/
+	// print Ether_Frame
+	/*
 	printf(	"-----------\nMAC Source: %s\nMAC Destination: %s\nEthernet Type: %d\nFrame Size: %d\n----\n"
 			"IP Source: %s\nIP Destination: %s\n----\n"
 			"Port Source: %d\nPort Destination: %d\nData: %s\nData Length: %d\n"
@@ -219,7 +252,8 @@ void my_packet_handler(u_char* args, const struct pcap_pkthdr* header, const u_c
 			frame->data.source_ip,frame->data.destination_ip,
 			frame->data.data.source_port,frame->data.data.destination_port,frame->data.data.data,frame->data.data.data_length
 			);
-	*/	
+	*/
+	//free(handler_tab_rules);
 	free(frame);
 }
 
@@ -235,12 +269,12 @@ int main(int argc, char** argv){
 	}
 	//reset cursor in file   
 	rewind(f_rules);
-
-	Rule tab_rules[nbr_line];
-	//OR
-	//Rule* tab_rules = (Rule*)calloc(nbr_line,sizeof(Rule));
 	
-	read_rules(f_rules,tab_rules,nbr_line);
+	Arg_passer arg_pass = {nbr_line};
+	
+	//Filling rule struct
+	read_rules(f_rules,arg_pass.rules_array,nbr_line);
+	
 	//Print tab_rule content
 	/*
 	for(int i = 0;i<nbr_line;i++){
@@ -264,7 +298,8 @@ int main(int argc, char** argv){
 	int total_packet_count = 0;
 
 	puts("\n-------Starting-------\n");
-	pcap_loop(handle, total_packet_count, my_packet_handler, NULL);
+		//using args to pass adress of arg_pass containing Rules and nbr_line
+	pcap_loop(handle, total_packet_count, my_packet_handler, (unsigned char*)&arg_pass);
 
 	fclose(f_rules);
 	return 0;

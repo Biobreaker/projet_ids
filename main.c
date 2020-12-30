@@ -127,6 +127,28 @@ bool protocolCheck(Rule* rules_ds, ETHER_Frame* frame){
 	}
 	return r_value;
 }
+//Option check
+bool contentCheck(Rule* rules_ds, ETHER_Frame* frame){
+
+	bool contentCheck = false;
+	bool isContentOption = false;
+	bool isContentInPayload = false;
+	for(int i = 0 ; i < rules_ds->option_size ; i++){
+		if(rules_ds->option_array[i].key == CONTENT_OPTION){
+			isContentOption = true;
+			if(strstr((char*)frame->data.data.data,rules_ds->option_array[i].value)!=NULL){
+				isContentInPayload = true;
+			}
+		}
+	}
+	if(!isContentOption){
+		contentCheck = true;
+	}
+	if(isContentInPayload){
+		contentCheck = true;
+	}
+	return contentCheck;
+}
 
 void rule_matcher(Rule* rules_ds, ETHER_Frame* frame){
 
@@ -142,10 +164,10 @@ void rule_matcher(Rule* rules_ds, ETHER_Frame* frame){
 					if(rules_ds->destination_port == ANY||rules_ds->destination_port == frame->data.data.destination_port){
 						//Protocol check
 						if(protocolCheck(rules_ds, frame)){
-							//printf("Rule matched\n");
-							//Option check
-							//also make fct
+							//Option Check
+							if(contentCheck(rules_ds,frame)){
 								//react according to action and option
+								printf("Rule matched\n");
 								char rule_message[MAX_VALUE_LEN];
 								strcpy(rule_message,"No message provided in .rules file");
 								for(int i = 0 ; i < rules_ds->option_size ; i++){
@@ -158,6 +180,7 @@ void rule_matcher(Rule* rules_ds, ETHER_Frame* frame){
 									syslog(LOG_INFO,rule_message);
 									closelog();
 								}
+							}
 						}
 					}
 				}

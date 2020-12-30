@@ -85,28 +85,28 @@ int populate_packet_ds(const struct pcap_pkthdr* header, const u_char* packet, E
 		custom_frame->data = custom_packet;
 
 		if((int)ip->ip_p==ICMPV4_PROTOCOL){
-			printf("\nICMP Protocol\n");
-			custom_packet.transport_protocol = ICMPV4_PROTOCOL;
+			printf("\nICMP Protocol");
+			custom_frame->data.transport_protocol = ICMPV4_PROTOCOL;
 		}
 		if((int)ip->ip_p==UDP_PROTOCOL){
 			printf("\nUDP Handling\n");
-			custom_packet.transport_protocol = UDP_PROTOCOL;
+			custom_frame->data.transport_protocol = UDP_PROTOCOL;
 		}
 		if((int)ip->ip_p==RSVP_PROTOCOL){
 			printf("\nRSVP_PROTOCOL\n");
-			custom_packet.transport_protocol = RSVP_PROTOCOL;
+			custom_frame->data.transport_protocol = RSVP_PROTOCOL;
 		}
 		if((int)ip->ip_p==GRE_PROTOCOL){
 			printf("\nGRE_PROTOCOL\n");
-			custom_packet.transport_protocol = GRE_PROTOCOL;
+			custom_frame->data.transport_protocol = GRE_PROTOCOL;
 		}
 		if((int)ip->ip_p==ESP_PROTOCOL){
 			printf("\nESP_PROTOCOL\n");
-			custom_packet.transport_protocol = ESP_PROTOCOL;
+			custom_frame->data.transport_protocol = ESP_PROTOCOL;
 		}
 		if((int)ip->ip_p==ICMPV6_PROTOCOL){
 			printf("\nICMPV6 PROTOCOL\n");
-			custom_packet.transport_protocol = ICMPV6_PROTOCOL;
+			custom_frame->data.transport_protocol = ICMPV6_PROTOCOL;
 		}
 		if((int)ip->ip_p==TCP_PROTOCOL){
 			printf("\nTCP Handling\n");
@@ -119,7 +119,6 @@ int populate_packet_ds(const struct pcap_pkthdr* header, const u_char* packet, E
 				printf("   * Invalid TCP header length: %u bytes\n", size_tcp);
 				return ERROR;
 			}
-			custom_packet.transport_protocol = TCP_PROTOCOL;
 			payload = (u_char*)(packet + SIZE_ETHERNET + size_ip + size_tcp);
 
 			int payload_length = (header->caplen)-SIZE_ETHERNET-size_ip-size_tcp;
@@ -131,7 +130,7 @@ int populate_packet_ds(const struct pcap_pkthdr* header, const u_char* packet, E
 			custom_segment.data_length = payload_length;
 			custom_packet.data = custom_segment;
 			custom_frame->data = custom_packet;
-						
+			custom_frame->data.transport_protocol = TCP_PROTOCOL;
 			//print_payload(payload_length, payload);
 
 		}

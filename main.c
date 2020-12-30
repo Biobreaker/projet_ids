@@ -142,7 +142,7 @@ void rule_matcher(Rule* rules_ds, ETHER_Frame* frame){
 					if(rules_ds->destination_port == ANY||rules_ds->destination_port == frame->data.data.destination_port){
 						//Protocol check
 						if(protocolCheck(rules_ds, frame)){
-							printf("Rule matched\n");
+							//printf("Rule matched\n");
 							//Option check
 							//also make fct
 								//react according to action and option
@@ -223,7 +223,7 @@ void my_packet_handler(u_char* args, const struct pcap_pkthdr* header, const u_c
 	//Filling frame with data
 	populate_packet_ds(header, packet, frame);
 	
-	
+	//printf("Value of transport protocol : %d\n",frame->data.transport_protocol);
 	//recasting args into Arg_passes
 	Arg_passer* arg_pass = (Arg_passer*)args;
 	

@@ -85,7 +85,7 @@ int populate_packet_ds(const struct pcap_pkthdr* header, const u_char* packet, E
 		custom_frame->data = custom_packet;
 
 		if((int)ip->ip_p==ICMPV4_PROTOCOL){
-			printf("\nICMP Protocol");
+			printf("\nICMP Protocol\n");
 			custom_frame->data.transport_protocol = ICMPV4_PROTOCOL;
 		}
 		if((int)ip->ip_p==UDP_PROTOCOL){

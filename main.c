@@ -7,6 +7,7 @@
 #define MAX_VALUE_LEN 50
 #define MAX_WORD_LEN 15
 #define MAX_LINE 2*MAX_WORD_LEN + 4*IP_ADDR_LEN_STR  + MAX_OPTION*MAX_VALUE_LEN
+
 //used to store options in rules
 struct rule_option{
 
@@ -17,6 +18,7 @@ struct rule_option{
 	char value[MAX_VALUE_LEN];
 
 } typedef Option;
+
 //used to store converted ids.rules value
 struct ids_rule{
 
@@ -35,6 +37,7 @@ struct ids_rule{
 	int option_size;
 
 } typedef Rule;
+
 //used to transfer int and struct ids_rule to my_packet_handler
 struct argument_passer{
 
@@ -44,34 +47,6 @@ struct argument_passer{
 	Rule rules_array[MAX_RULE_LINES];
 	
 } typedef Arg_passer;
-/*
-Transport
-
-ICMPV4_PROTOCOL 1
-TCP_PROTOCOL 6
-UDP_PROTOCOL 17
-RSVP_PROTOCOL 46
-GRE_PROTOCOL 47
-ESP_PROTOCOL 50
-ICMPV6_PROTOCOL 58
-
-Application
-
-FTP_DATA_PROTOCOL 20
-FTP_CONTROL_PROTOCOL 21
-SFTP_PROTOCOL 22
-TELNET_PROTOCOL 23
-SMTP_PROTOCOL 25
-DNS_PROTOCOL 53
-DHCP_PROTOCOL 67
-TFTP_PROTOCOL 69
-HTTP_PROTOCOL 80
-POP3_PROTOCOL 110
-NTP_PROTOCOL 123
-IMAP4_PROTOCOL 143
-HTTPS_PROTOCOL 443
-SNMP_PROTOCOL 161
-*/
 
 bool protocolCheck(Rule* rules_ds, ETHER_Frame* frame){
 	bool r_value = false;
@@ -90,6 +65,16 @@ bool protocolCheck(Rule* rules_ds, ETHER_Frame* frame){
 		}
 
 	}
+	if(strcmp(rules_ds->protocol,"egp")==0){
+		if(frame->data.transport_protocol == EGP_PROTOCOL){
+			r_value = true;
+		}
+	}
+	if(strcmp(rules_ds->protocol,"igp")==0){
+		if(frame->data.transport_protocol == IGP_PROTOCOL){
+			r_value = true;
+		}
+	}
 	if(strcmp(rules_ds->protocol,"udp")==0){
 		if(frame->data.transport_protocol == UDP_PROTOCOL){
 			r_value = true;
@@ -105,11 +90,6 @@ bool protocolCheck(Rule* rules_ds, ETHER_Frame* frame){
 			r_value = true;
 		}
 	}
-	if(strcmp(rules_ds->protocol,"esp")==0){
-		if(frame->data.transport_protocol == ESP_PROTOCOL){
-			r_value = true;
-		}
-	}
 //Check Application Layer Protocol
 	//Check Application Layer via TCP
 	if(frame->data.transport_protocol == TCP_PROTOCOL){
@@ -119,8 +99,97 @@ bool protocolCheck(Rule* rules_ds, ETHER_Frame* frame){
 				r_value = true;
 			}
 		}
+		if(strcmp(rules_ds->protocol,"sftp")==0){
+			if(frame->data.data.source_port == SSH_PROTOCOL || frame->data.data.destination_port == SSH_PROTOCOL){
+				r_value = true;
+			}
+		}
+		if(strcmp(rules_ds->protocol,"scp")==0){
+			if(frame->data.data.source_port == SSH_PROTOCOL || frame->data.data.destination_port == SSH_PROTOCOL){
+				r_value = true;
+			}
+		}
+		if(strcmp(rules_ds->protocol,"telnet")==0){
+			if(frame->data.data.source_port == TELNET_PROTOCOL || frame->data.data.destination_port == TELNET_PROTOCOL){
+				r_value = true;
+			}
+		}
+		if(strcmp(rules_ds->protocol,"smtp")==0){
+			if(frame->data.data.source_port == SMTP_PROTOCOL || frame->data.data.destination_port == SMTP_PROTOCOL){
+				r_value = true;
+			}
+		}
+		if(strcmp(rules_ds->protocol,"dns")==0){
+			if(frame->data.data.source_port == DNS_PROTOCOL || frame->data.data.destination_port == DNS_PROTOCOL){
+				r_value = true;
+			}
+		}
 		if(strcmp(rules_ds->protocol,"http")==0){
 			if(frame->data.data.source_port == HTTP_PROTOCOL || frame->data.data.destination_port == HTTP_PROTOCOL){
+				r_value = true;
+			}
+		}
+		if(strcmp(rules_ds->protocol,"kerberos")==0){
+			if(frame->data.data.source_port == KERBEROS_PROTOCOL || frame->data.data.destination_port == KERBEROS_PROTOCOL){
+				r_value = true;
+			}
+		}
+		if(strcmp(rules_ds->protocol,"pop2")==0){
+			if(frame->data.data.source_port == POP2_PROTOCOL || frame->data.data.destination_port == POP2_PROTOCOL){
+				r_value = true;
+			}
+		}
+		if(strcmp(rules_ds->protocol,"pop3")==0){
+			if(frame->data.data.source_port == POP3_PROTOCOL || frame->data.data.destination_port == POP3_PROTOCOL){
+				r_value = true;
+			}
+		}
+		if(strcmp(rules_ds->protocol,"nntp")==0){
+			if(frame->data.data.source_port == NNTP_PROTOCOL || frame->data.data.destination_port == NNTP_PROTOCOL){
+				r_value = true;
+			}
+		}
+		if(strcmp(rules_ds->protocol,"imap4")==0){
+			if(frame->data.data.source_port == IMAP4_PROTOCOL || frame->data.data.destination_port == IMAP4_PROTOCOL){
+				r_value = true;
+			}
+		}
+		if(strcmp(rules_ds->protocol,"https")==0){
+			if(frame->data.data.source_port == HTTPS_PROTOCOL || frame->data.data.destination_port == HTTPS_PROTOCOL){
+				r_value = true;
+			}
+		}
+	}
+	//Check Application Layer via UDP
+	if(frame->data.transport_protocol == UDP_PROTOCOL){
+		if(strcmp(rules_ds->protocol,"dns")==0){
+			if(frame->data.data.source_port == DNS_PROTOCOL || frame->data.data.destination_port == DNS_PROTOCOL){
+				r_value = true;
+			}
+		}
+		if(strcmp(rules_ds->protocol,"dhcp")==0){
+			if(frame->data.data.source_port == BOOTP_SERVER_PROTOCOL || frame->data.data.destination_port == BOOTP_SERVER_PROTOCOL
+			  ||frame->data.data.source_port == BOOTP_CLIENT_PROTOCOL || frame->data.data.destination_port == BOOTP_CLIENT_PROTOCOL){
+				r_value = true;
+			}
+		}
+		if(strcmp(rules_ds->protocol,"tftp")==0){
+			if(frame->data.data.source_port == TFTP_PROTOCOL || frame->data.data.destination_port == TFTP_PROTOCOL){
+				r_value = true;
+			}
+		}
+		if(strcmp(rules_ds->protocol,"kerberos")==0){
+			if(frame->data.data.source_port == KERBEROS_PROTOCOL || frame->data.data.destination_port == KERBEROS_PROTOCOL){
+				r_value = true;
+			}
+		}
+		if(strcmp(rules_ds->protocol,"ntp")==0){
+			if(frame->data.data.source_port == NTP_PROTOCOL || frame->data.data.destination_port == NTP_PROTOCOL){
+				r_value = true;
+			}
+		}
+		if(strcmp(rules_ds->protocol,"snmp")==0){
+			if(frame->data.data.source_port == SNMP_PROTOCOL || frame->data.data.destination_port == SNMP_PROTOCOL){
 				r_value = true;
 			}
 		}
@@ -164,7 +233,7 @@ void rule_matcher(Rule* rules_ds, ETHER_Frame* frame){
 					if(rules_ds->destination_port == ANY||rules_ds->destination_port == frame->data.data.destination_port){
 						//Protocol check
 						if(protocolCheck(rules_ds, frame)){
-							//Option Check
+							//Option content Check
 							if(contentCheck(rules_ds,frame)){
 								//react according to action and option
 								printf("Rule matched\n");
@@ -246,7 +315,6 @@ void my_packet_handler(u_char* args, const struct pcap_pkthdr* header, const u_c
 	//Filling frame with data
 	populate_packet_ds(header, packet, frame);
 	
-	//printf("Value of transport protocol : %d\n",frame->data.transport_protocol);
 	//recasting args into Arg_passes
 	Arg_passer* arg_pass = (Arg_passer*)args;
 	
@@ -276,7 +344,6 @@ void my_packet_handler(u_char* args, const struct pcap_pkthdr* header, const u_c
 			frame->data.data.source_port,frame->data.data.destination_port,frame->data.data.data,frame->data.data.data_length
 			);
 	*/
-	//free(handler_tab_rules);
 	free(frame);
 }
 

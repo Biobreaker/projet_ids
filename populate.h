@@ -15,10 +15,12 @@
 
 #define ICMPV4_PROTOCOL 1
 #define TCP_PROTOCOL 6
+#define EGP_PROTOCOL 8
+#define IGP_PROTOCOL 9
 #define UDP_PROTOCOL 17
 #define FTP_DATA_PROTOCOL 20
 #define FTP_CONTROL_PROTOCOL 21
-#define SFTP_PROTOCOL 22
+#define SSH_PROTOCOL 22
 #define TELNET_PROTOCOL 23
 #define SMTP_PROTOCOL 25
 #define RSVP_PROTOCOL 46
@@ -26,10 +28,14 @@
 #define ESP_PROTOCOL 50
 #define DNS_PROTOCOL 53
 #define ICMPV6_PROTOCOL 58
-#define DHCP_PROTOCOL 67
+#define BOOTP_SERVER_PROTOCOL 67
+#define BOOTP_CLIENT_PROTOCOL 68
 #define TFTP_PROTOCOL 69
 #define HTTP_PROTOCOL 80
+#define KERBEROS_PROTOCOL 88
+#define POP2_PROTOCOL 109
 #define POP3_PROTOCOL 110
+#define NNTP_PROTOCOL 119
 #define NTP_PROTOCOL 123
 #define IMAP4_PROTOCOL 143
 #define HTTPS_PROTOCOL 443
@@ -91,12 +97,19 @@ struct sniff_tcp {
         u_short th_urp;         /* urgent pointer */
 };
 
+struct sniff_udp {
+	u_short uh_sport;       /* source port */
+    u_short uh_dport;       /* destination port */
+    u_short uh_length;		/* size of udp header */
+    u_short uh_checksum;	/* checksum */
+};
 
 struct custom_udp
 {
-        int source_port;
-        int destination_port;
-        unsigned char* data;
+		int source_port;
+		int destination_port;
+		unsigned char* data;
+		int data_length;
 
 } typedef UDP_Packet;
 
@@ -104,10 +117,10 @@ struct custom_tcp
 {
         int source_port;
         int destination_port;
+        unsigned char* data;
         int sequence_number;
         int ack_number;
         int th_flag;
-        unsigned char* data;
         int data_length;
 
 } typedef TCP_Segment;

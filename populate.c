@@ -36,10 +36,12 @@ int populate_packet_ds(const struct pcap_pkthdr* header, const u_char* packet, E
 	const struct sniff_ethernet* ethernet; /* The ethernet header */
 	const struct sniff_ip* ip; /* The IP header */
 	const struct sniff_tcp* tcp; /* The TCP header */
+	const struct sniff_udp* udp;/* The UDP header */
 	unsigned char* payload; /* Packet payload */
 
 	u_int size_ip;
 	u_int size_tcp;
+	u_int size_udp;
 
 	ethernet = (struct sniff_ethernet*)(packet);
 	//ETHER_Frame custom_frame;
@@ -90,6 +92,29 @@ int populate_packet_ds(const struct pcap_pkthdr* header, const u_char* packet, E
 		}
 		if((int)ip->ip_p==UDP_PROTOCOL){
 			printf("\nUDP Handling\n");
+			udp = (struct sniff_udp*)(packet + SIZE_ETHERNET + size_ip);
+			//UDP_Packet custom_segment;
+			TCP_Segment custom_segment;
+			
+			size_udp = ntohs(udp->uh_length);
+
+			if (size_udp < 8) {
+				printf("   * Invalid UDP header length: %u bytes\n", size_udp);
+				return ERROR;
+			}
+			
+			payload = (u_char*)(packet + SIZE_ETHERNET + size_ip + size_udp);
+			int payload_length = (header->caplen)-SIZE_ETHERNET-size_ip-size_udp;
+			
+			//print_payload(payload_length, payload);
+						
+			custom_segment.source_port = ntohs(udp->uh_sport);
+			custom_segment.destination_port = ntohs(udp->uh_dport);
+			custom_segment.data = payload;
+			custom_segment.data_length = payload_length;
+
+			custom_packet.data = (TCP_Segment)custom_segment;
+			custom_frame->data = custom_packet;
 			custom_frame->data.transport_protocol = UDP_PROTOCOL;
 		}
 		if((int)ip->ip_p==RSVP_PROTOCOL){
@@ -101,8 +126,12 @@ int populate_packet_ds(const struct pcap_pkthdr* header, const u_char* packet, E
 			custom_frame->data.transport_protocol = GRE_PROTOCOL;
 		}
 		if((int)ip->ip_p==ESP_PROTOCOL){
-			printf("\nESP_PROTOCOL\n");
-			custom_frame->data.transport_protocol = ESP_PROTOCOL;
+			printf("\nEGP_PROTOCOL\n");
+			custom_frame->data.transport_protocol = EGP_PROTOCOL;
+		}
+		if((int)ip->ip_p==ESP_PROTOCOL){
+			printf("\nIGP_PROTOCOL\n");
+			custom_frame->data.transport_protocol = IGP_PROTOCOL;
 		}
 		if((int)ip->ip_p==ICMPV6_PROTOCOL){
 			printf("\nICMPV6 PROTOCOL\n");
@@ -114,20 +143,20 @@ int populate_packet_ds(const struct pcap_pkthdr* header, const u_char* packet, E
 			TCP_Segment custom_segment;
 
 			size_tcp = TH_OFF(tcp)*4;
-
 			if (size_tcp < 20) {
 				printf("   * Invalid TCP header length: %u bytes\n", size_tcp);
 				return ERROR;
 			}
 			payload = (u_char*)(packet + SIZE_ETHERNET + size_ip + size_tcp);
-
 			int payload_length = (header->caplen)-SIZE_ETHERNET-size_ip-size_tcp;
+			
 			custom_segment.source_port = ntohs(tcp->th_sport);
 			custom_segment.destination_port = ntohs(tcp->th_dport);
 			custom_segment.th_flag = (int)tcp->th_flags;
 			custom_segment.sequence_number = tcp->th_seq;
 			custom_segment.data = payload;
 			custom_segment.data_length = payload_length;
+			
 			custom_packet.data = custom_segment;
 			custom_frame->data = custom_packet;
 			custom_frame->data.transport_protocol = TCP_PROTOCOL;

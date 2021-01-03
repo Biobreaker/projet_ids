@@ -98,18 +98,18 @@ struct sniff_tcp {
 };
 
 struct sniff_udp {
-	u_short uh_sport;       /* source port */
-    u_short uh_dport;       /* destination port */
-    u_short uh_length;		/* size of udp header */
-    u_short uh_checksum;	/* checksum */
+	u_short uh_sport;  	/* source port */
+	u_short uh_dport;	/* destination port */
+	u_short uh_length;	/* size of udp header */
+	u_short uh_checksum;  	/* checksum */
 };
 
 struct custom_udp
 {
-		int source_port;
-		int destination_port;
-		unsigned char* data;
-		int data_length;
+	int source_port;
+	int destination_port;
+	unsigned char* data;
+	int data_length;
 
 } typedef UDP_Packet;
 

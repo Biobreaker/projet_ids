@@ -255,7 +255,7 @@ void rule_matcher(Rule* rules_ds, ETHER_Frame* frame){
 								}
 								if(rules_ds->action == ACTION_ALERT){
 									openlog("IDS",LOG_PID|LOG_CONS,LOG_USER);
-									syslog(LOG_INFO,rule_message);
+									syslog(LOG_ALERT,rule_message);
 									closelog();
 								}
 							}

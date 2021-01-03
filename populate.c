@@ -105,8 +105,6 @@ int populate_packet_ds(const struct pcap_pkthdr* header, const u_char* packet, E
 			
 			payload = (u_char*)(packet + SIZE_ETHERNET + size_ip + size_udp);
 			int payload_length = (header->caplen)-SIZE_ETHERNET-size_ip-size_udp;
-			
-			//print_payload(payload_length, payload);
 						
 			custom_segment.source_port = ntohs(udp->uh_sport);
 			custom_segment.destination_port = ntohs(udp->uh_dport);
@@ -160,7 +158,6 @@ int populate_packet_ds(const struct pcap_pkthdr* header, const u_char* packet, E
 			custom_packet.data = custom_segment;
 			custom_frame->data = custom_packet;
 			custom_frame->data.transport_protocol = TCP_PROTOCOL;
-			//print_payload(payload_length, payload);
 
 		}
 	}

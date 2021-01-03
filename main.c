@@ -42,7 +42,7 @@ struct ids_rule{
 //used to transfer int and struct ids_rule to my_packet_handler
 struct argument_passer{
 
-	#define MAX_RULE_LINES 32
+	#define MAX_RULE_LINES 256
 
 	int total_line;
 	Rule rules_array[MAX_RULE_LINES];
@@ -209,24 +209,15 @@ bool protocolCheck(Rule* rules_ds, ETHER_Frame* frame){
 
 //Option check
 bool contentCheck(Rule* rules_ds, ETHER_Frame* frame){
-	bool contentCheck = false;
-	bool isContentOption = false;
 	bool isContentInPayload = false;
 	for(int i = 0 ; i < rules_ds->option_size ; i++){
 		if(rules_ds->option_array[i].key == CONTENT_OPTION){
-			isContentOption = true;
 			if(strstr((char*)frame->data.data.data,rules_ds->option_array[i].value)!=NULL){
 				isContentInPayload = true;
 			}
 		}
 	}
-	if(!isContentOption){
-		contentCheck = true;
-	}
-	if(isContentInPayload){
-		contentCheck = true;
-	}
-	return contentCheck;
+	return isContentInPayload;
 }
 
 void rule_matcher(Rule* rules_ds, ETHER_Frame* frame){
@@ -341,7 +332,6 @@ void my_packet_handler(u_char* args, const struct pcap_pkthdr* header, const u_c
 
 	//create Struct Frame
 	ETHER_Frame* frame = (ETHER_Frame*)calloc(1,sizeof(ETHER_Frame));
-		//puts("\nSTART OF PACKET");	
 	//Filling frame with data
 	populate_packet_ds(header, packet, frame);
 	//recasting args into Arg_passes
@@ -363,6 +353,9 @@ int main(int argc, char** argv){
 	while(fgets(str_line,MAX_LINE,f_rules)!=NULL){
 		nbr_line++;
 	}
+	if(nbr_line>MAX_RULE_LINES){
+		return EXIT_FAILURE;
+	}
 	//reset cursor in file   
 	rewind(f_rules);
 	
@@ -370,6 +363,7 @@ int main(int argc, char** argv){
 	
 	//Filling rule struct
 	read_rules(f_rules,arg_pass.rules_array,nbr_line);
+	fclose(f_rules);
 	
 	char* device = "eth1";
 	char error_buffer[PCAP_ERRBUF_SIZE];
@@ -381,10 +375,9 @@ int main(int argc, char** argv){
 	//if total_packet_count == 0 -> endless loop
 	int total_packet_count = 0;
 
-	puts("\n-------Analyzing Packets-------\n");
+	printf("\n-------Analyzing Packets on [%s]-------\n",device);
 		//using args to pass adress of arg_pass containing Rules and nbr_line
 	pcap_loop(handle, total_packet_count, my_packet_handler, (unsigned char*)&arg_pass);
 
-	fclose(f_rules);
 	return 0;
 }

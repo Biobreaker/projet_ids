@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <syslog.h>
 #include <stdbool.h>
+
 //define for rule files
 #define MAX_OPTION 5
 #define MAX_VALUE_LEN 50
@@ -48,12 +49,21 @@ struct argument_passer{
 	
 } typedef Arg_passer;
 
+//function proto
+void printRule(Rule*,int);
+void printFrame(ETHER_Frame*);
+bool protocolCheck(Rule*,ETHER_Frame*);
+bool contentCheck(Rule*,ETHER_Frame*);
+void rule_matcher(Rule*,ETHER_Frame*);
+void read_rules(FILE*,Rule*,int);
+
+//Great check for Protocols
 bool protocolCheck(Rule* rules_ds, ETHER_Frame* frame){
 	bool r_value = false;
 	if(strcmp(rules_ds->protocol,"any")==0){
 			r_value = true;
 	}
-//Check Transport Layer Protocol
+	//Transport Layer Protocols
 	if(strcmp(rules_ds->protocol,"icmp")==0){
 		if(frame->data.transport_protocol == ICMPV4_PROTOCOL ||frame->data.transport_protocol == ICMPV6_PROTOCOL){
 			r_value = true;
@@ -90,8 +100,8 @@ bool protocolCheck(Rule* rules_ds, ETHER_Frame* frame){
 			r_value = true;
 		}
 	}
-//Check Application Layer Protocol
-	//Check Application Layer via TCP
+	//Application Layer Protocols
+		//via TCP
 	if(frame->data.transport_protocol == TCP_PROTOCOL){
 		if(strcmp(rules_ds->protocol,"ftp")==0){
 			if(frame->data.data.source_port == FTP_DATA_PROTOCOL || frame->data.data.destination_port == FTP_DATA_PROTOCOL
@@ -160,7 +170,7 @@ bool protocolCheck(Rule* rules_ds, ETHER_Frame* frame){
 			}
 		}
 	}
-	//Check Application Layer via UDP
+		//via UDP
 	if(frame->data.transport_protocol == UDP_PROTOCOL){
 		if(strcmp(rules_ds->protocol,"dns")==0){
 			if(frame->data.data.source_port == DNS_PROTOCOL || frame->data.data.destination_port == DNS_PROTOCOL){
@@ -196,9 +206,9 @@ bool protocolCheck(Rule* rules_ds, ETHER_Frame* frame){
 	}
 	return r_value;
 }
+
 //Option check
 bool contentCheck(Rule* rules_ds, ETHER_Frame* frame){
-
 	bool contentCheck = false;
 	bool isContentOption = false;
 	bool isContentInPayload = false;
@@ -220,7 +230,6 @@ bool contentCheck(Rule* rules_ds, ETHER_Frame* frame){
 }
 
 void rule_matcher(Rule* rules_ds, ETHER_Frame* frame){
-
 	//Source IP check
 	if(strcmp(rules_ds->source_ip,"any")==0||strcmp(rules_ds->source_ip,frame->data.source_ip)==0){
 		//Source Port check
@@ -306,44 +315,41 @@ void read_rules(FILE* file, Rule* rules_ds, int count){
 	}
 }
 
-void my_packet_handler(u_char* args, const struct pcap_pkthdr* header, const u_char* packet){
-
-	//create Struct Frame
-	ETHER_Frame* frame = (ETHER_Frame*)calloc(1,sizeof(ETHER_Frame));
-
-		//puts("\nSTART OF PACKET");	
-	//Filling frame with data
-	populate_packet_ds(header, packet, frame);
-	
-	//recasting args into Arg_passes
-	Arg_passer* arg_pass = (Arg_passer*)args;
-	
-	for(int i = 0;i<arg_pass->total_line;i++){
-		rule_matcher(&arg_pass->rules_array[i],frame);
-	}
-	//print rules
-	/*
-	for(int i = 0;i<arg_pass->total_line;i++){
-		printf("Regle n°%d\n-----\nAction: %d, Protocol: %s, From: %s:%d Direction:[%s], To: %s:%d\n",i+1,arg_pass->rules_array[i].action,arg_pass->rules_array[i].protocol,
-			arg_pass->rules_array[i].source_ip,arg_pass->rules_array[i].source_port,arg_pass->rules_array[i].direction,arg_pass->rules_array[i].destination_ip,arg_pass->rules_array[i].destination_port);
-		for(int j = 0;j<arg_pass->rules_array[i].option_size;j++){
-			printf("Option %d: [%d:%s]",j+1,arg_pass->rules_array[i].option_array[j].key,arg_pass->rules_array[i].option_array[j].value);
+// print rules
+void printRule(Rule* p_rule, int index){
+	printf("Regle n°%d\n-----\nAction: %d, Protocol: %s, From: %s:%d Direction:[%s], To: %s:%d\n",index+1,p_rule->action,p_rule->protocol,
+			p_rule->source_ip,p_rule->source_port,p_rule->direction,p_rule->destination_ip,p_rule->destination_port);
+		for(int j = 0;j<p_rule->option_size;j++){
+			printf("Option %d: [%d:%s]",j+1,p_rule->option_array[j].key,p_rule->option_array[j].value);
 			printf("//");
 		}
 		puts("\n");
-	}
-	*/
-	// print Ether_Frame
-	/*
+}
+
+// print Ether_Frame
+void printFrame(ETHER_Frame* frame){
 	printf(	"-----------\nMAC Source: %s\nMAC Destination: %s\nEthernet Type: %d\nFrame Size: %d\n----\n"
 			"IP Source: %s\nIP Destination: %s\n----\n"
-			"Port Source: %d\nPort Destination: %d\nData: %s\nData Length: %d\n"
-			"\nEND OF PACKET\n\n",
+			"Port Source: %d\nPort Destination: %d\nData: %s\nData Length: %d\n",
 			frame->source_mac,frame->destination_mac,frame->ethernet_type,frame->frame_size,
 			frame->data.source_ip,frame->data.destination_ip,
 			frame->data.data.source_port,frame->data.data.destination_port,frame->data.data.data,frame->data.data.data_length
 			);
-	*/
+}
+
+void my_packet_handler(u_char* args, const struct pcap_pkthdr* header, const u_char* packet){
+
+	//create Struct Frame
+	ETHER_Frame* frame = (ETHER_Frame*)calloc(1,sizeof(ETHER_Frame));
+		//puts("\nSTART OF PACKET");	
+	//Filling frame with data
+	populate_packet_ds(header, packet, frame);
+	//recasting args into Arg_passes
+	Arg_passer* arg_pass = (Arg_passer*)args;
+	//Matching frame with rules
+	for(int i = 0;i<arg_pass->total_line;i++){
+		rule_matcher(&arg_pass->rules_array[i],frame);
+	}
 	free(frame);
 }
 
@@ -365,18 +371,6 @@ int main(int argc, char** argv){
 	//Filling rule struct
 	read_rules(f_rules,arg_pass.rules_array,nbr_line);
 	
-	//Print tab_rule content
-	/*
-	for(int i = 0;i<nbr_line;i++){
-		printf("Regle n°%d\n-----\nAction: %d, Protocol: %s, From: %s:%d Direction:[%s], To: %s:%d\n",i+1,tab_rules[i].action,tab_rules[i].protocol,
-			tab_rules[i].source_ip,tab_rules[i].source_port,tab_rules[i].direction,tab_rules[i].destination_ip,tab_rules[i].destination_port);
-		for(int j = 0;j<tab_rules[i].option_size;j++){
-			printf("Option %d: [%d:%s]",j+1,tab_rules[i].option_array[j].key,tab_rules[i].option_array[j].value);
-			printf("//");
-		}
-		puts("\n");
-	}
-	*/
 	char* device = "eth1";
 	char error_buffer[PCAP_ERRBUF_SIZE];
 	pcap_t* handle;
@@ -387,7 +381,7 @@ int main(int argc, char** argv){
 	//if total_packet_count == 0 -> endless loop
 	int total_packet_count = 0;
 
-	puts("\n-------Starting-------\n");
+	puts("\n-------Analyzing Packets-------\n");
 		//using args to pass adress of arg_pass containing Rules and nbr_line
 	pcap_loop(handle, total_packet_count, my_packet_handler, (unsigned char*)&arg_pass);
 

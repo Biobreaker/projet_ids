@@ -1,13 +1,14 @@
 # projet_ids
 Code source du projet pour développement réalisé par Maxime Demoulin et Anthony Lesceux
 
-# main.c
+# [main.c](./main.c)
 ## rule_matcher
 Prototype:
 ```c
 void rule_matcher(Rule*,ETHER_Frame*);
 ```
 Cette fonction vérifie, pour une règle et une frame données, l'égalité entre les champs de la règle et les champs de la frame.
+
 Pour se faire, on utilise la fonction `strcmp(string1,string2)`.
 ### strcmp
 Prototype:
@@ -15,7 +16,8 @@ Prototype:
 int strcmp( const char * first, const char * second );
 ```
 Libaraire: `string.h`
-Si toutes les verfications sont passées avec succès, alors un crée une entrée dans syslog selon les valeurs `action` et `msg`
+
+Si toutes les verfications sont passées avec succès, alors un crée une entrée dans syslog selon les valeurs `action` et `msg`.
 ### protocolCheck
 Prototype:
 ```c
@@ -56,7 +58,9 @@ Si c'est le cas, on vérifie si le dit contenu est présent dans le payload.
 }
 ```
 Si il n'y a pas de clé `content` alors la fonction renvoi `true`.
+
 Si il y a une clé `content` et que le contenu est présent dans le payload alors la fonction renvoi `true`.
+
 Sinon, la fonction renvoi `false`.
 ```c
 return contentCheck;
@@ -74,6 +78,7 @@ for(int i = 0 ; i < rules_ds->option_size ; i++){
 Lorsque celle-ci est trouvée, on copie sa valeur dans `rule_message`
 ### Generation de syslog
 On vérifie que le type d'action est bien 'alert'. 
+
 Si c'est le cas on crée un log de type `LOG_ALERT` avec pour message `rule_message`.
 ```c
 if(rules_ds->action == ACTION_ALERT){
@@ -89,28 +94,84 @@ Prototype:
 void read_rules(FILE*,Rule*,int);
 ```
 Pour chacune des lignes du fichier de règles, on garnit une structure `Rule` selon les valeurs de la ligne en question.
-Pour se faire on utilise la fonction `strtok(token,separators)`
+### struct ids_rule (Alias Rule)
+```c
+struct ids_rule{
+	#define ACTION_ALERT 1
+	#define ANY 0
+	#define DIRECTION_LEN 3
+	int action;
+	char protocol[MAX_WORD_LEN];
+	char source_ip[IP_ADDR_LEN_STR];
+	int source_port;
+	char direction[DIRECTION_LEN];
+	char destination_ip[IP_ADDR_LEN_STR];
+	int destination_port;
+	Option option_array[MAX_OPTION];
+	int option_size;
+} typedef Rule;
+```
+Pour se faire on utilise la fonction `strtok(string,delimiters)`
 ### strtok
 Prototype:
 ```c
 char * strtok( char * restrict string, const char * restrict delimiters );
 ```
 Libaraire: `string.h`
+
+Cette fonction sert à décomposer une chaine de caractères selon certains délimiteurs.
+
+Ici elle est utilisée:
++ Une première fois pour récupérer chaque paramètres d'une ligne du fichier `ids.rules`
++ Une deuxième fois pour récupérer les différentes options et leurs valeurs.
+
+Pour les options on utilise la structure:
+### struct rule_option (Alias Option)
+```c
+struct rule_option{
+	#define MSG_OPTION 1
+	#define CONTENT_OPTION 2
+	int key;
+	char value[MAX_VALUE_LEN];
+} typedef Option;
+```
 ## main
 ```c
 ```
-### Arg_passer
+### struct argument_passer (Alias Arg_passer)
 ```c
 struct argument_passer{
-
 	#define MAX_RULE_LINES 256
-
 	int total_line;
 	Rule rules_array[MAX_RULE_LINES];
-	
 } typedef Arg_passer;
 ```
-# populate.c
+## print rules
+```c
+void printRule(Rule* p_rule, int index){
+    printf("Regle n°%d\n-----\nAction: %d, Protocol: %s, From: %s:%d Direction:[%s], To: %s:%d\n",index+1,p_rule->action,p_rule->protocol,
+     p_rule->source_ip,p_rule->source_port,p_rule->direction,p_rule->destination_ip,p_rule->destination_port);
+    for(int j = 0;j<p_rule->option_size;j++){
+        printf("Option %d: [%d:%s]",j+1,p_rule->option_array[j].key,p_rule->option_array[j].value);
+	printf("//");
+    }
+    puts("\n");
+}
+```
+Cette fonction est utilisée à des fins de debug.
+## printFrame
+```c
+void printFrame(ETHER_Frame* frame){
+	printf(	"-----------\nMAC Source: %s\nMAC Destination: %s\nEthernet Type: %d\nFrame Size: %d\n----\n"
+			"IP Source: %s\nIP Destination: %s\n----\n"
+			"Port Source: %d\nPort Destination: %d\nData: %s\nData Length: %d\n",
+			frame->source_mac,frame->destination_mac,frame->ethernet_type,frame->frame_size,
+			frame->data.source_ip,frame->data.destination_ip,
+			frame->data.data.source_port,frame->data.data.destination_port,frame->data.data.data,frame->data.data.data_length
+			);
+}
+```
+# [populate.c](./populate.c)
 ## Vérification des protocols couche Transport
 Format générique:
 ```c
@@ -177,9 +238,9 @@ if((int)ip->ip_p==TCP_PROTOCOL){
 
 }
 ```
-# populate.h
+# [populate.h](./populate.h)
 ## define
-Basé sur les informations de [cette page](https://en.wikipedia.org/wiki/List_of_IP_protocol_numbers), on obtient ces tableau
+Basé sur les informations de [cette page](https://en.wikipedia.org/wiki/List_of_IP_protocol_numbers), on obtient ces tableaux
 | Protocols couche Transport | Ports |
 | :------------------------- |:-----:|
 | ICMPv4                     | 1     |
@@ -221,4 +282,12 @@ struct sniff_udp {
     u_short uh_checksum;	/* checksum */
 };
 ```
-Cette structure est utilisé pour caster la frame et ainsi récupérer le contenu du header UDP [(cfr 
+Cette structure est utilisé pour caster la frame et ainsi récupérer le contenu du header UDP.
+# [ids.rules](./ids.rules)
+Le fichier de configuration doit respecter le format suivant:
+`action protocol ip_address_source port_source direction ip_address_dest port_dest (key1:"value1";key2,"value2";)`
+Pour la simplicité du programme, seul l'action `alert` est implémentée.
+
+La liste des protocols utilisable est:
+
+`icmp`,`tcp`,`egp`,`igp`,`udp`,`rsvp`,`gre`,`ftp`,`sftp`,`scp`,`telnet`,`smtp`,`dns`,`dhcp`,`tftp`,`http`,`kerberos`,`pop2`,`pop3`,`nntp`,`ntp`,`imap4`,`snmp`,`https`

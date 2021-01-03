@@ -370,6 +370,7 @@ int main(int argc, char** argv){
 	
 	//Filling rule struct
 	read_rules(f_rules,arg_pass.rules_array,nbr_line);
+	fclose(f_rules);
 	
 	char* device = "eth1";
 	char error_buffer[PCAP_ERRBUF_SIZE];
@@ -385,6 +386,5 @@ int main(int argc, char** argv){
 		//using args to pass adress of arg_pass containing Rules and nbr_line
 	pcap_loop(handle, total_packet_count, my_packet_handler, (unsigned char*)&arg_pass);
 
-	fclose(f_rules);
 	return 0;
 }

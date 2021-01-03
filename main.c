@@ -354,6 +354,7 @@ int main(int argc, char** argv){
 		nbr_line++;
 	}
 	if(nbr_line>MAX_RULE_LINES){
+		printf("%s too big. Max lines value is %d\n",argv[1],MAX_RULE_LINES);
 		return EXIT_FAILURE;
 	}
 	//reset cursor in file   

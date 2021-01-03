@@ -362,8 +362,19 @@ Cette structure est utilisé pour caster la frame et ainsi récupérer le conten
 # [ids.rules](./ids.rules)
 Le fichier de configuration doit respecter le format suivant:
 `action protocol ip_address_source port_source direction ip_address_dest port_dest (key1:"value1";key2,"value2";)`
+
 Pour la simplicité du programme, seul l'action `alert` est implémentée.
 
 La liste des protocols utilisable est:
 
-`icmp`,`tcp`,`egp`,`igp`,`udp`,`rsvp`,`gre`,`ftp`,`sftp`,`scp`,`telnet`,`smtp`,`dns`,`dhcp`,`tftp`,`http`,`kerberos`,`pop2`,`pop3`,`nntp`,`ntp`,`imap4`,`snmp`,`https`
+`any`,`icmp`,`tcp`,`egp`,`igp`,`udp`,`rsvp`,`gre`,`ftp`,`sftp`,`scp`,`telnet`,`smtp`,`dns`,`dhcp`,`tftp`,`http`,`kerberos`,`pop2`,`pop3`,`nntp`,`ntp`,`imap4`,`snmp`,`https`
+
+Une IP doit respecter le format xxx.xxx.xxx.xxx ou `any` si aucun ne doit être spécifié/
+
+Un port doit être un nombre compris entre 0 et 65535. `any` peut également être utilisé.
+
+Seuls deux clés sont supportées actuellement:
+
+`msg`,`content`
+
+Les couples clés et valeur doivent respecter le formatage `key:value;` et contenu dans une parenthèse

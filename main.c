@@ -42,7 +42,7 @@ struct ids_rule{
 //used to transfer int and struct ids_rule to my_packet_handler
 struct argument_passer{
 
-	#define MAX_RULE_LINES 32
+	#define MAX_RULE_LINES 256
 
 	int total_line;
 	Rule rules_array[MAX_RULE_LINES];

@@ -1,6 +1,9 @@
 # projet_ids
 Code source du projet pour développement réalisé par Maxime Demoulin et Anthony Lesceux
 
+### Qu’est-ce qu’un IDS :
+
+L’Intrusion Détection System (IDS) est un outil qui utilise un mécanisme de détection, destiné à surveiller le trafic entrant et sortant du réseau dans le but de détecter des activités anormales ou suspectes sur une cible. Dans le but de nous informer d’une potentielle attaque/intrusion en temps réel.
 
 # [main.c](./main.c)
 ## rule_matcher

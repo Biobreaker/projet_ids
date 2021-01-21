@@ -209,15 +209,24 @@ bool protocolCheck(Rule* rules_ds, ETHER_Frame* frame){
 
 //Option check
 bool contentCheck(Rule* rules_ds, ETHER_Frame* frame){
+	bool contentCheck = false;
+	bool isContentOption = false;
 	bool isContentInPayload = false;
 	for(int i = 0 ; i < rules_ds->option_size ; i++){
 		if(rules_ds->option_array[i].key == CONTENT_OPTION){
+			isContentOption = true;
 			if(strstr((char*)frame->data.data.data,rules_ds->option_array[i].value)!=NULL){
 				isContentInPayload = true;
 			}
 		}
 	}
-	return isContentInPayload;
+	if(!isContentOption){
+		contentCheck = true;
+	}
+	if(isContentInPayload){
+		contentCheck = true;
+	}
+	return contentCheck;
 }
 
 void rule_matcher(Rule* rules_ds, ETHER_Frame* frame){
@@ -320,10 +329,10 @@ void printRule(Rule* p_rule, int index){
 // print Ether_Frame
 void printFrame(ETHER_Frame* frame){
 	printf(	"-----------\nMAC Source: %s\nMAC Destination: %s\nEthernet Type: %d\nFrame Size: %d\n----\n"
-			"IP Source: %s\nIP Destination: %s\n----\n"
+			"IP Source: %s\nIP Destination: %s\n Protocol: %d\n----\n"
 			"Port Source: %d\nPort Destination: %d\nData: %s\nData Length: %d\n",
 			frame->source_mac,frame->destination_mac,frame->ethernet_type,frame->frame_size,
-			frame->data.source_ip,frame->data.destination_ip,
+			frame->data.source_ip,frame->data.destination_ip,frame->data.transport_protocol,
 			frame->data.data.source_port,frame->data.data.destination_port,frame->data.data.data,frame->data.data.data_length
 			);
 }

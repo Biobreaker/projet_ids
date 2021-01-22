@@ -123,11 +123,11 @@ int populate_packet_ds(const struct pcap_pkthdr* header, const u_char* packet, E
 			printf("\nGRE_PROTOCOL\n");
 			custom_frame->data.transport_protocol = GRE_PROTOCOL;
 		}
-		if((int)ip->ip_p==ESP_PROTOCOL){
+		if((int)ip->ip_p==EGP_PROTOCOL){
 			printf("\nEGP_PROTOCOL\n");
 			custom_frame->data.transport_protocol = EGP_PROTOCOL;
 		}
-		if((int)ip->ip_p==ESP_PROTOCOL){
+		if((int)ip->ip_p==IGP_PROTOCOL){
 			printf("\nIGP_PROTOCOL\n");
 			custom_frame->data.transport_protocol = IGP_PROTOCOL;
 		}

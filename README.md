@@ -21,7 +21,7 @@ int strcmp( const char * first, const char * second );
 ```
 Libaraire: `string.h`
 
-Si toutes les verfications sont passées avec succès, alors un crée une entrée dans syslog selon les valeurs `action` et `msg` du fichier `ids.rules`
+Si toutes les verfications sont passées avec succès, alors on crée une entrée dans syslog selon les valeurs `action` et `msg` du fichier `ids.rules`
 ### protocolCheck
 Prototype:
 ```c
@@ -47,7 +47,7 @@ Prototype:
 bool contentCheck(Rule*,ETHER_Frame*);
 ```
 #### Recherche de clé 'content'
-On parcourt l'ensemble l'ensemble des clés pour vérifier si l'une d'elle est `content`.
+On parcourt l'ensemble des clés pour vérifier si l'une d'elle est de type `content`.
 ```c
 for(int i = 0 ; i < rules_ds->option_size ; i++){
     if(rules_ds->option_array[i].key == CONTENT_OPTION){
@@ -146,7 +146,7 @@ typedef void (*pcap_handler)(u_char *arg, const struct pcap_pkthdr *, const u_ch
 ```
 `my_packet_handler` est une fonction de rappel utilisée par `pcap_loop()`.
 
-Pour chaque paquet qui transite via le réseau, on reçoit peut les traiter via cette fonction.
+Pour chaque paquet qui transite via le réseau, on peut les traiter via cette fonction.
 ```c
     ETHER_Frame* frame = (ETHER_Frame*)calloc(1,sizeof(ETHER_Frame));
     populate_packet_ds(header, packet, frame);
@@ -156,7 +156,7 @@ Pour chaque paquet qui transite via le réseau, on reçoit peut les traiter via 
     }
     free(frame);
 ```
-Tout d'abord, un pointeur vers une structure `ETHER_Frame` est crée via la fonction `calloc()`
+Tout d'abord, un pointeur vers une structure `ETHER_Frame` qui est crée via la fonction `calloc()`
 Ensuite on fait appel à la fonction `populate_packet_ds`[(cfr populate.c)](#populatec)
 On crée une structure `Arg_passer`[(voir plus bas)](#structargumentpasseraliasargpasser)que l'on remplit avec les valeurs pointées par `args`
 Après ça, on boucle sur le nombre total de ligne de notre fichier `ids.rules`.
@@ -182,7 +182,7 @@ Dans la première partie du main, on ouvre un fichier que l'on va parcourir enti
 
 Ensuite, si ce nombre de ligne dépasse la valeur définie, on affiche le message d'erreur et on arrète le programme.
 
-Finalement, on place lu curseur du fichier au début, puis on appel la fonction `read_rules()`
+Finalement, on place le curseur du fichier au début, puis on appel la fonction `read_rules()`
 ```c
     char* device = "eth1";
     char error_buffer[PCAP_ERRBUF_SIZE];
